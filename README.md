@@ -65,10 +65,11 @@ wallpaper recommendation/
 │           └── js/
 │               ├── wallpaper.js                  # 前端主逻辑（模型切换/换一批/骨架屏等）
 │               └── particles.js                  # 黑色炫酷粒子背景（随鼠标动）
-├── data/                                         # 数据文件（默认路径见 Config.java）
+│ 
 ├── scripts/                                      # 数据抓取/生成/处理脚本
 ├── reports/                                      # 离线评测输出（CSV）
-├── images/                                       # 可选：下载的壁纸图片（用于本地缓存/展示）
+├── data/                                         # 数据文件（默认路径见 Config.java）
+│   └── images/                                   # 可选：下载的壁纸图片（用于本地缓存/展示）
 ├── pom.xml
 └── README.md
 ```
