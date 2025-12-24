@@ -207,7 +207,57 @@ userId:0.1 0.2 0.3 ...
 - 输出指标：`Precision@K / Recall@K / NDCG@K / Hit@K`
 - 输出文件：`reports/offline_eval_k{K}_like{threshold}.csv`
 
-> 提示：如果数据很少或正例稀疏，可降低 `--minTrain` 或 `--like`。
+> 提示：如果数据很少或正例稀疏（尤其 ItemCF 容易为 0），通常需要**降低 `--like`** 或**扩容评分数据**（见 `scripts/gen_synthetic_ratings.py`）。
+
+### 如何调整参数做“完整性能测试”（建议实验设计）
+
+离线评测的核心可调参数：
+
+- **`--k`**：Top-K 的 K 值（一次评测对应一个 K）
+- **`--like`**：正例阈值（评分 ≥ like 视为“喜欢”）
+- **`--leaveOut`**：每用户留出最后几条做测试集（时间切分）
+- **`--minTrain`**：每用户训练集最少交互数（越大越严格）
+- **`--maxNeighbors`**：ItemCF 近邻上限（影响效果与速度）
+
+为了“测试更完整”，建议至少覆盖三个维度：
+
+- **阈值敏感性**：`like` 取多档（稀疏程度不同）
+- **Top-K 曲线**：K 取多档（Top 少量 vs 拉长列表）
+- **切分严苛度**：`leaveOut`、`minTrain` 取多档（历史更少/更多）
+
+#### 最小可用（6 次）
+
+用于快速得到“阈值敏感性 + Top-K”结论，适合答辩：
+
+- `like ∈ {3.0, 3.5, 4.0}`
+- `K ∈ {10, 20}`
+- 固定 `leaveOut=1, minTrain=3`
+
+总实验数：\(3 \times 2 = 6\)
+
+命令模板（把 K 与 like 替换）：
+
+```bash
+java -cp target/wallpaper-recommendation-system-1.0-SNAPSHOT-jar-with-dependencies.jar \
+  com.wallpaperrecsys.eval.OfflineEvalMain --k=20 --like=3.5 --leaveOut=1 --minTrain=3 --reportDir=reports
+```
+
+
+
+### 一键汇总与可视化（推荐）
+
+生成多个 `reports/offline_eval_k*_like*.csv` 后，可用脚本自动汇总并画图：
+
+```bash
+python3 scripts/report_analyze.py --reports_dir reports --out_dir reports
+```
+
+输出：
+- 汇总表：`reports/summary_eval.csv`
+- 汇总 Markdown：`reports/summary_eval.md`
+- 可视化：
+  - 若安装 matplotlib：`reports/plots/*.png`
+  - 否则（零依赖）：`reports/plots_svg/*.svg`
 
 ---
 
@@ -302,6 +352,18 @@ python3 scripts/gen_synthetic_ratings.py --num_ratings 10000 --num_users 200 --s
 - `data/user_embeddings.csv`（用高分壁纸 embedding 的均值合成用户向量）
 
 生成后请重启服务让后端重新加载数据。
+
+### 5）离线评测结果汇总与可视化：`scripts/report_analyze.py`
+
+用途：自动扫描 `reports/offline_eval_k*_like*.csv`，输出汇总表（CSV/Markdown）并可视化（PNG）。
+
+运行：
+
+```bash
+python3 scripts/report_analyze.py --reports_dir reports --out_dir reports
+```
+
+> 若提示缺少 matplotlib，可安装：`pip install matplotlib`
 
 其余脚本（按你现有实现）：
 - `scripts/wallhaven_fetch.py`
